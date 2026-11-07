@@ -1,0 +1,5 @@
+Variaveis de ambiente necessarias (Render > Environment):
+  SUPABASE_URL        (Project URL do Supabase)
+  SUPABASE_ANON_KEY   (chave anon/public do Supabase)
+Opcional: DAILY_LIMIT (videos por utilizador por dia, default 20)
+Local: SUPABASE_URL=... SUPABASE_ANON_KEY=... python server.py

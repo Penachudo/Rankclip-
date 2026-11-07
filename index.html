@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RankClip – Video Ranking grátis</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo+Black&display=swap">
+<style>
+:root{--bg:#0b0b1a;--panel:#12122a;--line:#23234a;--tx:#e8e8f5;--mut:#8a8ab0;--ac:#19e6a8;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:14px system-ui,sans-serif;display:grid;grid-template-columns:210px 1fr 360px;min-height:100vh}
+aside{border-right:1px solid var(--line);padding:18px 12px}
+.logo{font:22px 'Archivo Black',Impact,sans-serif;margin:0 8px 22px}.logo span{color:var(--ac)}
+.nav{padding:10px 12px;border-radius:8px;color:var(--mut)}
+.nav.on{background:#1b1b3d;color:var(--tx)}.nav small{font-size:10px;opacity:.7}
+main{padding:20px;overflow:auto;max-height:100vh}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:16px;margin-bottom:16px}
+h3{margin:0 0 12px;font-size:15px}
+label{display:block;color:var(--mut);font-size:12px;margin:10px 0 4px}
+input,select,textarea,button{background:#0d0d22;color:var(--tx);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+textarea{width:100%;resize:vertical;font:20px 'Archivo Black',Impact,sans-serif}
+input[type=color]{padding:0;width:34px;height:34px;cursor:pointer}
+input[type=text]{width:100%}
+button{cursor:pointer}button:hover{border-color:var(--ac)}
+button.on{background:var(--ac);color:#000}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.rank{border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:10px}
+.rank header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-weight:600}
+.go{background:var(--ac);color:#000;border:0;font-weight:700;padding:10px 16px}
+.pv{padding:20px;border-left:1px solid var(--line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:12px}
+canvas{width:100%;max-height:68vh;aspect-ratio:9/16;object-fit:contain;border-radius:12px;border:1px solid var(--line);background:#000}
+#st{color:var(--mut);font-size:12px;min-height:16px}
+@media(max-width:1000px){body{grid-template-columns:1fr}aside{display:none}main{max-height:none}.pv{position:static;height:auto;border:0}canvas{max-width:340px;margin:auto}}
+#auth{position:fixed;inset:0;background:#0b0b1af2;display:flex;align-items:center;justify-content:center;z-index:99;padding:16px}
+#auth .box{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;width:100%;max-width:340px}
+#auth input{width:100%;margin-bottom:10px}#auth .btns{display:flex;gap:8px}#auth .btns button{flex:1}
+#am{font-size:12px;color:var(--mut);min-height:16px;margin-top:10px}
+</style>
+</head>
+<body>
+<aside>
+  <div class="logo">Rank<span>Clip</span></div>
+  <div class="nav on">🏆 Video Ranking</div>
+  <div class="nav">▭ Split Screen <small>(em breve)</small></div>
+  <div class="nav">📖 Text Story <small>(em breve)</small></div>
+  <div class="nav">✂️ Auto Clipping <small>(em breve)</small></div>
+  <div id="who" class="nav" style="font-size:12px;margin-top:20px;word-break:break-all"></div>
+  <button id="out" style="margin:0 12px">Sair</button>
+</aside>
+
+<main>
+  <div class="card">
+    <h3>Título do ranking</h3>
+    <div class="bar">
+      <select id="font"><option>Archivo Black</option><option>Impact</option><option>Arial Black</option><option>Georgia</option></select>
+      <select id="size"><option>20</option><option selected>28</option><option>34</option><option>40</option></select>
+      <button id="b">B</button><button id="i"><i>I</i></button>
+      <button data-al="left">⟸</button><button data-al="center" class="on">≡</button><button data-al="right">⟹</button>
+      <input type="color" id="col" value="#19e6a8" title="Cor do destaque">
+      <input type="color" id="scol" value="#000000" title="Cor do contorno">
+    </div>
+    <textarea id="title" rows="2">Ranking Best *Parkour Fails* Ever</textarea>
+    <label>Usa *asteriscos* à volta das palavras para as destacar com a cor</label>
+    <label>Contorno do título</label>
+    <input type="range" id="stroke" min="0" max="12" value="0" style="width:100%">
+  </div>
+
+  <div class="card">
+    <h3>Definições gerais</h3>
+    <div class="row">
+      <div><label>Altura do vídeo (%)</label><input type="number" id="h" value="80" min="30" max="100" style="width:100%"></div>
+      <div><label>Fundo</label><input type="color" id="bg" value="#000000"></div>
+    </div>
+    <label><input type="checkbox" id="cap"> Mostrar legenda (nome de cada vídeo)</label>
+    <label><input type="checkbox" id="custom"> Ordem personalizada (desligado = contagem decrescente, do último ao #1)</label>
+  </div>
+
+  <div id="list"></div>
+  <button id="add">+ Adicionar vídeo</button>
+</main>
+
+<section class="pv">
+  <canvas id="cv" width="540" height="960"></canvas>
+  <div style="display:flex;gap:8px">
+    <button id="play" class="go">▶ Pré-visualizar</button>
+    <button id="exp" class="go">⬇ Exportar vídeo</button>
+    <button id="stop">■</button>
+  </div>
+  <div id="st">Adiciona vídeos do teu computador e carrega em Exportar.</div>
+</section>
+
+<div id="auth"><div class="box">
+  <div class="logo" style="margin:0 0 6px">Rank<span>Clip</span></div>
+  <p style="color:var(--mut);margin:0 0 16px">Cria uma conta grátis para começar.</p>
+  <input type="text" id="em" placeholder="Email" autocomplete="email">
+  <input type="password" id="pw" placeholder="Palavra-passe (mín. 6)" autocomplete="current-password" style="width:100%;margin-bottom:10px">
+  <div class="btns"><button class="go" id="su">Criar conta</button><button id="si">Entrar</button></div>
+  <div id="am"></div>
+</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const S={font:'Archivo Black',size:28,bold:false,italic:false,align:'center',color:'#19e6a8',scol:'#000000',stroke:0,h:80,bg:'#000000',cap:false,custom:false};
+const items=[{name:'',el:null},{name:'',el:null}];
+const cv=document.getElementById('cv'),ctx=cv.getContext('2d'),W=540,H=960;
+const $=id=>document.getElementById(id);
+let cur=null,running=false,stopFlag=false,ac=null,dest=null;
+
+function lines(){
+  const px=S.size*1.9;
+  ctx.font=(S.italic?'italic ':'')+(S.bold?'bold ':'')+px+'px "'+S.font+'",Impact,sans-serif';
+  const toks=[];let hl=false;
+  $('title').value.split('\n').forEach((ln,li)=>{
+    if(li)toks.push({br:1});
+    ln.split(/(\*)/).forEach(p=>{if(p==='*'){hl=!hl;return}p.split(' ').filter(Boolean).forEach(w=>toks.push({t:w,c:hl?S.color:'#fff'}))});
+  });
+  const out=[[]];let w=0;const sp=ctx.measureText(' ').width,max=W-60;
+  toks.forEach(k=>{
+    if(k.br){out.push([]);w=0;return}
+    const kw=ctx.measureText(k.t).width,L=out[out.length-1];
+    if(L.length&&w+sp+kw>max){out.push([]);w=0}
+    const L2=out[out.length-1];w+=(L2.length?sp:0)+kw;L2.push({...k,w:kw});
+  });
+  return {out,px,sp};
+}
+
+function draw(){
+  ctx.fillStyle=S.bg;ctx.fillRect(0,0,W,H);
+  const {out,px,sp}=lines();
+  ctx.textBaseline='top';ctx.lineJoin='round';
+  let y=50;
+  out.forEach(L=>{
+    const tw=L.reduce((a,k)=>a+k.w,0)+sp*Math.max(0,L.length-1);
+    let x=S.align==='left'?30:S.align==='right'?W-30-tw:(W-tw)/2;
+    L.forEach(k=>{
+      if(S.stroke){ctx.lineWidth=S.stroke*2;ctx.strokeStyle=S.scol;ctx.strokeText(k.t,x,y)}
+      ctx.fillStyle=k.c;ctx.fillText(k.t,x,y);x+=k.w+sp;
+    });
+    y+=px*1.15;
+  });
+  const vh=H*S.h/100,vy=Math.max(y+10,H-vh);
+  const bh=H-vy;
+  const it=cur||items.find(i=>i.el);
+  if(it&&it.el&&it.el.videoWidth){
+    const v=it.el,r=Math.max(W/v.videoWidth,bh/v.videoHeight),sw=W/r,sh=bh/r;
+    ctx.drawImage(v,(v.videoWidth-sw)/2,(v.videoHeight-sh)/2,sw,sh,0,vy,W,bh);
+  }else{
+    ctx.fillStyle='#ffffff18';ctx.fillRect(0,vy,W,bh);
+    ctx.fillStyle='#fff8';ctx.font='20px system-ui';ctx.textAlign='center';ctx.fillText('Adiciona um vídeo',W/2,vy+bh/2);ctx.textAlign='left';
+  }
+  if(it){
+    const n=items.indexOf(it)+1;
+    ctx.font='40px "Archivo Black",Impact,sans-serif';
+    ctx.lineWidth=8;ctx.strokeStyle='#000';ctx.strokeText('#'+n,20,vy+14);ctx.fillStyle='#fff';ctx.fillText('#'+n,20,vy+14);
+    if(S.cap&&it.name){
+      ctx.font='28px "Archivo Black",Impact,sans-serif';ctx.textAlign='center';
+      ctx.lineWidth=7;ctx.strokeText(it.name,W/2,H-70);ctx.fillText(it.name,W/2,H-70);ctx.textAlign='left';
+    }
+  }
+}
+
+function loadVideo(it,url){
+  const v=document.createElement('video');v.src=url;v.playsInline=true;v.preload='auto';
+  v.onloadeddata=()=>{v.currentTime=0.05;draw()};v.onseeked=()=>{if(!running)draw()};
+  it.el=v;
+}
+
+function renderList(){
+  $('list').innerHTML='';
+  items.forEach((it,i)=>{
+    const d=document.createElement('div');d.className='rank';
+    d.innerHTML=`<header><span>Video Rank ${i+1}</span><span><button data-a="up">↑</button> <button data-a="dn">↓</button> <button data-a="rm">🗑</button></span></header>
+    <label>Link (TikTok, YouTube, Instagram)</label><div style="display:flex;gap:8px"><input type="text" class="lk" placeholder="https://www.tiktok.com/..."><button class="gl">Carregar</button></div><span class="ls" style="font-size:12px;color:var(--mut)"></span><label>ou ficheiro do computador</label><input type="file" accept="video/*"><label>Legenda / nome</label><input type="text" class="nm" value="${it.name.replace(/"/g,'&quot;')}" placeholder="ex: Salto falhado">`;
+    const ls=d.querySelector('.ls');
+    d.querySelector('input[type=file]').onchange=e=>{const f=e.target.files[0];if(f)loadVideo(it,URL.createObjectURL(f))};
+    d.querySelector('.gl').onclick=async()=>{
+      const u=d.querySelector('.lk').value.trim();if(!u)return;
+      ls.textContent='A buscar o vídeo… (pode demorar uns segundos)';
+      try{
+        const r=await fetch('/api/fetch?url='+encodeURIComponent(u),{headers:{Authorization:'Bearer '+token}});
+        if(!r.ok)throw new Error((await r.json()).error||'erro');
+        loadVideo(it,URL.createObjectURL(await r.blob()));ls.textContent='✓ Vídeo carregado';
+      }catch(err){ls.textContent='Não consegui carregar: '+err.message}
+    };
+    d.querySelector('.nm').oninput=e=>{it.name=e.target.value;draw()};
+    d.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{
+      const a=b.dataset.a;
+      if(a==='rm')items.splice(i,1);
+      if(a==='up'&&i>0)[items[i-1],items[i]]=[items[i],items[i-1]];
+      if(a==='dn'&&i<items.length-1)[items[i+1],items[i]]=[items[i],items[i+1]];
+      renderList();draw();
+    });
+    $('list').appendChild(d);
+  });
+}
+
+function bindAudio(el){
+  if(!ac){ac=new AudioContext();dest=ac.createMediaStreamDestination()}
+  if(!el._s){el._s=ac.createMediaElementSource(el);el._s.connect(dest);el._s.connect(ac.destination)}
+}
+
+function loop(){if(!running)return;draw();requestAnimationFrame(loop)}
+
+async function run(rec){
+  const list=items.filter(i=>i.el);
+  if(!list.length){$('st').textContent='Adiciona pelo menos um vídeo.';return}
+  const order=S.custom?list:[...list].reverse();
+  stopFlag=false;running=true;
+  let mr=null,chunks=[];
+  if(rec){
+    list.forEach(i=>bindAudio(i.el));await ac.resume();
+    const stream=cv.captureStream(30);
+    dest.stream.getAudioTracks().forEach(t=>stream.addTrack(t));
+    const mt=['video/webm;codecs=vp9,opus','video/webm'].find(m=>MediaRecorder.isTypeSupported(m));
+    mr=new MediaRecorder(stream,{mimeType:mt,videoBitsPerSecond:6e6});
+    mr.ondataavailable=e=>e.data.size&&chunks.push(e.data);
+    mr.start();
+  }
+  loop();
+  for(const it of order){
+    if(stopFlag)break;
+    cur=it;$('st').textContent=(rec?'A gravar… ':'A reproduzir… ')+'#'+(items.indexOf(it)+1);
+    it.el.currentTime=0;
+    await new Promise(res=>{it.el.onended=res;it.el._stop=res;it.el.play().catch(res)});
+  }
+  order.forEach(i=>i.el.pause());
+  running=false;cur=null;draw();
+  if(mr){
+    await new Promise(res=>{mr.onstop=res;mr.stop()});
+    const blob=new Blob(chunks,{type:'video/webm'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ranking.webm';a.click();
+    $('st').textContent='Pronto! Ficheiro ranking.webm descarregado.';
+  }else $('st').textContent='Fim da pré-visualização.';
+}
+
+$('play').onclick=()=>!running&&run(false);
+$('exp').onclick=()=>!running&&run(true);
+$('stop').onclick=()=>{stopFlag=true;items.forEach(i=>i.el&&(i.el.pause(),i.el._stop&&i.el._stop()))};
+$('add').onclick=()=>{items.push({name:'',el:null});renderList()};
+
+$('font').onchange=e=>{S.font=e.target.value;draw()};
+$('size').onchange=e=>{S.size=+e.target.value;draw()};
+$('b').onclick=e=>{S.bold=!S.bold;e.target.classList.toggle('on',S.bold);draw()};
+$('i').onclick=e=>{S.italic=!S.italic;e.currentTarget.classList.toggle('on',S.italic);draw()};
+document.querySelectorAll('[data-al]').forEach(b=>b.onclick=()=>{S.align=b.dataset.al;document.querySelectorAll('[data-al]').forEach(x=>x.classList.toggle('on',x===b));draw()});
+$('col').oninput=e=>{S.color=e.target.value;draw()};
+$('scol').oninput=e=>{S.scol=e.target.value;draw()};
+$('stroke').oninput=e=>{S.stroke=+e.target.value;draw()};
+$('title').oninput=draw;
+$('h').oninput=e=>{S.h=Math.min(100,Math.max(30,+e.target.value||80));draw()};
+$('bg').oninput=e=>{S.bg=e.target.value;draw()};
+$('cap').onchange=e=>{S.cap=e.target.checked;draw()};
+$('custom').onchange=e=>{S.custom=e.target.checked;};
+
+let sb=null,token=null;
+function setSess(se){token=se?se.access_token:null;$('auth').style.display=se?'none':'flex';$('who').textContent=se?se.user.email:''}
+async function initAuth(){
+  try{
+    const c=await (await fetch('/api/config')).json();
+    sb=supabase.createClient(c.url,c.key);
+    const {data}=await sb.auth.getSession();setSess(data.session);
+    sb.auth.onAuthStateChange((_,se)=>setSess(se));
+  }catch(e){$('am').textContent='Servidor de contas indisponível.'}
+}
+async function doAuth(signup){
+  if(!sb)return;const email=$('em').value.trim(),password=$('pw').value;
+  $('am').textContent='…';
+  const r=signup?await sb.auth.signUp({email,password}):await sb.auth.signInWithPassword({email,password});
+  if(r.error){$('am').textContent=r.error.message;return}
+  if(signup&&!r.data.session)$('am').textContent='Conta criada! Confirma o teu email e depois carrega em Entrar.';
+}
+$('su').onclick=()=>doAuth(true);$('si').onclick=()=>doAuth(false);
+$('out').onclick=()=>sb&&sb.auth.signOut();
+initAuth();
+
+renderList();draw();
+(document.fonts&&document.fonts.load('28px "Archivo Black"').then(draw));
+</script>
+</body>
+</html>
